@@ -16,7 +16,7 @@ UserController.signUp = function(userVo, callbk) {
                 callbk(apiResponse.success(thisuser))
             });
         } else {
-            callbk(apiResponse.error(err));
+            callbk(apiResponse.error({ errmsg: 'User already exists' }));
         }
     })
 };
