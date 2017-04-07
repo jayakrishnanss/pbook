@@ -1,5 +1,6 @@
 var mongoose = require('mongoose'),
-    Schema = mongoose.Schema;
+    Schema = mongoose.Schema,
+    crypto = require('crypto');
 
 var UserSchema = new Schema({
     email: { type: 'String', unique: true, required: true, dropDups: true },
@@ -33,13 +34,13 @@ UserSchema.method("authenticate", function(email, password, cb) {
         }
         if (thisUser) {
             var bPassMatch = false;
-            if (password === thisUser.password) {
+            if (crypto.createHash('md5').update(password).digest("hex") === thisUser.password) {
                 cb(null, thisUser.formattedUser());
             } else {
-                cb("invalid username or password");
+                cb("Invalid username or password");
             }
         } else {
-            cb("user does not exist");
+            cb("User does not exist");
         }
 
     });

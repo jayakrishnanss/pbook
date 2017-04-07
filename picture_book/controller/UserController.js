@@ -1,15 +1,24 @@
 var express = require('express'),
     apiResponse = require('../utils/Response'),
     userSchema = require('../model/schema/UserSchema'),
-    UserController = {};
+    crypto = require('crypto');
+UserController = {};
 
 UserController.signUp = function(userVo, callbk) {
-    userSchema.create(userVo, function(err, thisuser) {
-        if (err) {
+    var thisUser = new userSchema();
+    thisUser.authenticate(userVo.email, '', function(err, data) {
+        if (err === 'User does not exist') {
+            userVo.password = crypto.createHash('md5').update(userVo.password).digest("hex");
+            userSchema.create(userVo, function(err, thisuser) {
+                if (err) {
+                    callbk(apiResponse.error(err));
+                }
+                callbk(apiResponse.success(thisuser))
+            });
+        } else {
             callbk(apiResponse.error(err));
         }
-        callbk(apiResponse.success(thisuser))
-    });
+    })
 };
 
 UserController.login = function(userVo, callbk) {
@@ -17,14 +26,13 @@ UserController.login = function(userVo, callbk) {
         var thisUser = new userSchema();
         thisUser.authenticate(userVo.email, userVo.password, function(err, data) {
             if (err) {
-                apiResponse.error({ errmsg: 'Invalid username or password' })
                 callbk(apiResponse.error(err));
             } else {
                 callbk(apiResponse.success(data));
             }
         })
     } else {
-        callbk(apiResponse.error({ errmsg: 'email and password required' }));
+        callbk(apiResponse.error({ errmsg: 'Email and Password required' }));
     }
 }
 
