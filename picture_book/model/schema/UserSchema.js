@@ -1,6 +1,8 @@
 var mongoose = require('mongoose'),
     Schema = mongoose.Schema,
-    crypto = require('crypto');
+    crypto = require('crypto'),
+    jwt = require('jwt-simple'),
+    secret = 'xxx';
 
 var UserSchema = new Schema({
     email: { type: 'String', unique: true, required: true, dropDups: true },
@@ -35,7 +37,17 @@ UserSchema.method("authenticate", function(email, password, cb) {
         if (thisUser) {
             var bPassMatch = false;
             if (crypto.createHash('md5').update(password).digest("hex") === thisUser.password) {
-                cb(null, thisUser.formattedUser());
+                if (!thisUser.accessToken) {
+                    thisUser.accessToken = jwt.encode({ 'email': thisUser.email, 'time': new Date() }, secret);
+                }
+                query.findOneAndUpdate({ email: thisUser.email }, { $set: { accessToken: thisUser.accessToken } }, { upsert: true }, function(err, doc) {
+                    if (err) {
+                        throw err;
+                    } else {
+                        cb(null, thisUser.formattedUser());
+                    }
+                });
+
             } else {
                 cb("Invalid username or password");
             }
@@ -45,5 +57,5 @@ UserSchema.method("authenticate", function(email, password, cb) {
 
     });
 });
-userSchemaObj = mongoose.model('userList', UserSchema);;
+userSchemaObj = mongoose.model('userList', UserSchema);
 module.exports = userSchemaObj;
